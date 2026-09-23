@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alert Box & Voice Reader - OBS / Browser Overlay</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @keyframes bounceIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.05); opacity: 1; }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-bounce-in {
+      animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+  </style>
+</head>
+<body class="bg-transparent min-h-screen flex items-center justify-center p-4 overflow-hidden">
+
+  <!-- Hộp thông báo Alert Box -->
+  <div id="alertBox" class="hidden max-w-lg w-full bg-slate-900/95 border-2 border-rose-500 rounded-3xl p-6 shadow-2xl backdrop-blur-md text-center text-white relative">
+    
+    <!-- Huy hiệu icon quà tặng -->
+    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/40 text-2xl animate-pulse">
+      <i class="fa-solid fa-gift text-white"></i>
+    </div>
+
+    <!-- Tên người donate & Số tiền -->
+    <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-rose-400" id="alertDonor">
+      Người ủng hộ
+    </h2>
+    <div class="text-3xl font-extrabold text-amber-300 font-mono my-2" id="alertAmount">
+      +0 VND
+    </div>
+
+    <!-- Lời nhắn -->
+    <div class="mt-3 p-4 bg-slate-800/80 rounded-2xl border border-slate-700 text-sm text-slate-200 font-medium italic" id="alertMessage">
+      "Lời nhắn ở đây"
+    </div>
+
+    <!-- Thanh tiến trình thời gian hiển thị -->
+    <div class="w-full bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
+      <div id="alertProgress" class="bg-rose-500 h-full w-full transition-all duration-[7000ms] ease-linear"></div>
+    </div>
+  </div>
+
+  <!-- Bảng điều khiển nhỏ góc dưới (cho người dùng kiểm tra trạng thái) -->
+  <div id="statusBadge" class="fixed bottom-3 right-3 bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-400 flex items-center gap-2 shadow-lg backdrop-blur">
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+    <span id="statusText">Đang lắng nghe donate payOS...</span>
+    <button onclick="testSpeak()" class="ml-2 text-rose-400 hover:text-rose-300 underline font-semibold">Test Loa</button>
+  </div>
+
+  <script>
+    let alertQueue = [];
+    let isShowingAlert = false;
+    let selectedVoice = null;
+
+    // Tự động tìm giọng đọc tiếng Việt của trình duyệt
+    function initSpeechVoice() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          const voices = window.speechSynthesis.getVoices();
+          // Ưu tiên giọng tiếng Việt (vi-VN)
+          selectedVoice = voices.find(v => v.lang.startsWith('vi') || v.name.toLowerCase().includes('vietnam')) || null;
+        };
+      }
+    }
+    initSpeechVoice();
+
+    // Phát âm thanh ting-ting ngắn trước khi đọc
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+      } catch (e) {
+        console.warn('AudioContext chưa kích hoạt:', e);
+      }
+    }
+
+    // Đọc văn bản bằng giọng nói
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) {
+        console.warn('Trình duyệt không hỗ trợ Web Speech API');
+        return;
+      }
+      window.speechSynthesis.cancel(); // Dừng câu trước nếu có
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'vi-VN';
+      utterance.rate = 1.0; // Tốc độ đọc
+      utterance.pitch = 1.0;
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Hiển thị Alert trên màn hình
+    function showAlert(alertData) {
+      isShowingAlert = true;
+      const box = document.getElementById('alertBox');
+      const donorEl = document.getElementById('alertDonor');
+      const amountEl = document.getElementById('alertAmount');
+      const msgEl = document.getElementById('alertMessage');
+      const progressEl = document.getElementById('alertProgress');
+
+      donorEl.innerText = alertData.name;
+      amountEl.innerText = '+' + alertData.amount.toLocaleString() + ' VND';
+      msgEl.innerText = `"${alertData.message || 'Ủng hộ bạn!'}"`;
+
+      box.classList.remove('hidden');
+      box.classList.add('animate-bounce-in');
+      progressEl.style.width = '100%';
+
+      // Bắn pháo hoa confetti
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      }
+
+      // Phát tiếng chuông & Đọc to
+      playBeep();
+      setTimeout(() => {
+        const speechContent = alertData.speechText || `Cảm ơn ${alertData.name} đã ủng hộ ${alertData.amount.toLocaleString()} đồng. Lời nhắn: ${alertData.message}`;
+        speakText(speechContent);
+      }, 300);
+
+      // Bắt đầu chạy thanh thời gian
+      setTimeout(() => {
+        progressEl.style.width = '0%';
+      }, 50);
+
+      // Ẩn sau 7 giây và xử lý alert tiếp theo
+      setTimeout(() => {
+        box.classList.add('hidden');
+        box.classList.remove('animate-bounce-in');
+        isShowingAlert = false;
+        processQueue();
+      }, 7000);
+    }
+
+    function processQueue() {
+      if (isShowingAlert || alertQueue.length === 0) return;
+      const nextAlert = alertQueue.shift();
+      showAlert(nextAlert);
+    }
+
+    // Polling lấy các donate mới từ backend
+    async function pollAlerts() {
+      try {
+        const res = await fetch('/api/alerts/poll?mark_read=true');
+        const data = await res.json();
+        if (data.success && data.alerts && data.alerts.length > 0) {
+          alertQueue.push(...data.alerts);
+          processQueue();
+        }
+      } catch (err) {
+        console.error('Lỗi poll alerts:', err);
+      }
+    }
+
+    // Nút thử nghiệm loa
+    function testSpeak() {
+      alertQueue.push({
+        name: 'Bạn Thử Nghiệm',
+        amount: 50000,
+        message: 'Xin chào! Hệ thống đọc giọng nói payOS đang hoạt động rất tốt!',
+        speechText: 'Cảm ơn Bạn Thử Nghiệm đã ủng hộ 50.000 đồng. Lời nhắn: Xin chào! Hệ thống đọc giọng nói payOS đang hoạt động rất tốt!'
+      });
+      processQueue();
+    }
+
+    // Polling mỗi 2.5 giây
+    setInterval(pollAlerts, 2500);
+  </script>
+</body>
+</html>

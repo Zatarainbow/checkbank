@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ủng Hộ / Donate Tự Động - payOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
+          <i class="fa-solid fa-heart text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">Cổng Donate Tự Động</h1>
+          <p class="text-xs text-slate-400">Tích hợp payOS & Đọc Giọng Nói Tự Động</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <a href="/overlay" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-2 border border-slate-700 transition">
+          <i class="fa-solid fa-bullhorn text-rose-400"></i>
+          <span>Mở Alert Box (OBS)</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-1 grid md:grid-cols-5 gap-8">
+    
+    <!-- Cột Form Donate (3 phần) -->
+    <div class="md:col-span-3">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-6 shadow-xl backdrop-blur">
+        <div class="mb-6">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-hand-holding-heart text-rose-500"></i> Gửi Ủng Hộ (Donate)
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Nội dung và tên của bạn sẽ được đọc to qua loa ngay khi nhận được tiền!</p>
+        </div>
+
+        <form id="donateForm" class="space-y-5">
+          <!-- Tên người gửi -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">Tên / Biệt danh của bạn <span class="text-rose-500">*</span></label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                <i class="fa-solid fa-user text-sm"></i>
+              </span>
+              <input type="text" id="donorName" required placeholder="Ví dụ: Bạn Ẩn Danh, Fan Cứng..." 
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
+            </div>
+          </div>
+
+          <!-- Số tiền -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">Số tiền ủng hộ (VND) <span class="text-rose-500">*</span></label>
+            <div class="relative mb-2">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                <i class="fa-solid fa-coins text-sm text-amber-400"></i>
+              </span>
+              <input type="number" id="donorAmount" required min="2000" step="1000" value="20000"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-14 py-2.5 text-sm focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition font-mono font-semibold text-amber-300" />
+              <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-400 font-bold">VND</span>
+            </div>
+            <!-- Quick select buttons -->
+            <div class="grid grid-cols-4 gap-2">
+              <button type="button" onclick="setAmount(10000)" class="py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">10.000</button>
+              <button type="button" onclick="setAmount(20000)" class="py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">20.000</button>
+              <button type="button" onclick="setAmount(50000)" class="py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">50.000</button>
+              <button type="button" onclick="setAmount(100000)" class="py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-300 transition">100.000</button>
+            </div>
+          </div>
+
+          <!-- Lời nhắn -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">Lời nhắn đi kèm (Sẽ được đọc to) <span class="text-rose-500">*</span></label>
+            <div class="relative">
+              <textarea id="donorMessage" rows="3" required placeholder="Nhập lời nhắn của bạn gửi tới streamer/chủ kênh..." 
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition resize-none"></textarea>
+            </div>
+            <p class="text-right text-xs text-slate-500 mt-1">Giọng nói tự động đọc toàn bộ lời nhắn này</p>
+          </div>
+
+          <!-- Nút Submit -->
+          <button type="submit" id="submitBtn" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white font-semibold text-sm shadow-lg shadow-rose-500/25 transition duration-200 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-qrcode"></i>
+            <span>Tạo Mã Thanh Toán payOS</span>
+          </button>
+        </form>
+
+        <div class="mt-4 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+          <span>Bảo mật thanh toán bởi VietQR / payOS</span>
+          <button onclick="testVoiceAlert()" class="text-rose-400 hover:underline flex items-center gap-1">
+            <i class="fa-solid fa-volume-high"></i> Thử đọc giọng nói test
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột Danh sách donate gần đây (2 phần) -->
+    <div class="md:col-span-2 space-y-4">
+      <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5 shadow-xl backdrop-blur">
+        <h3 class="font-bold text-white text-sm mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-trophy text-amber-400"></i> Vừa Mới Ủng Hộ
+        </h3>
+        <div id="recentList" class="space-y-3 max-h-[380px] overflow-y-auto pr-1 text-sm">
+          <div class="text-xs text-slate-500 text-center py-6">Đang tải lịch sử donate...</div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 text-xs text-slate-400">
+        <p class="font-medium text-slate-300 mb-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-info-circle text-sky-400"></i> Hướng dẫn đọc giọng nói:
+        </p>
+        <ul class="list-disc list-inside space-y-1 text-slate-400">
+          <li>Mở tab <a href="/overlay" target="_blank" class="text-rose-400 underline">Alert Box</a> trên trình duyệt hoặc OBS.</li>
+          <li>Hoặc chạy script <code class="text-amber-300">speaker_client.py</code> trên máy bạn.</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Thanh Toán QR -->
+  <div id="qrModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl relative">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white">Quét Mã Thanh Toán</h3>
+      <p class="text-xs text-slate-400 mt-1 mb-4">Sử dụng ứng dụng Ngân hàng bất kỳ để quét mã VietQR</p>
+
+      <!-- Khung QR -->
+      <div class="bg-white p-3 rounded-xl inline-block shadow-inner mb-4">
+        <img id="qrImage" src="" alt="VietQR PayOS" class="w-56 h-56 mx-auto object-contain" />
+      </div>
+
+      <div class="space-y-1 mb-5 text-sm">
+        <div class="flex justify-between text-slate-400">
+          <span>Số tiền:</span>
+          <span id="modalAmount" class="font-bold text-amber-400 font-mono">0 VND</span>
+        </div>
+        <div class="flex justify-between text-slate-400">
+          <span>Mã đơn:</span>
+          <span id="modalOrderCode" class="font-mono text-xs text-slate-300">#0000</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <a id="payosLink" href="#" target="_blank" class="flex-1 py-2.5 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-medium text-xs transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-external-link-alt"></i> Mở Trang payOS
+        </a>
+        <button onclick="closeModal()" class="py-2.5 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs transition">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+    Hệ thống Donate Tự Động với payOS & FastAPI • Deploy Vercel
+  </footer>
+
+  <script>
+    function setAmount(val) {
+      document.getElementById('donorAmount').value = val;
+    }
+
+    function closeModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    // Submit form donate
+    document.getElementById('donateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo mã payOS...';
+
+      const payload = {
+        name: document.getElementById('donorName').value,
+        amount: parseInt(document.getElementById('donorAmount').value),
+        message: document.getElementById('donorMessage').value
+      };
+
+      try {
+        const res = await fetch('/api/create-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          if (data.checkoutUrl) {
+            // Hiển thị modal hoặc chuyển hướng trực tiếp tới payOS
+            document.getElementById('modalAmount').innerText = payload.amount.toLocaleString() + ' VND';
+            document.getElementById('modalOrderCode').innerText = '#' + data.orderCode;
+            document.getElementById('payosLink').href = data.checkoutUrl;
+            
+            // Nếu có link qrCode hoặc sinh từ payOS
+            if (data.qrCode) {
+              document.getElementById('qrImage').src = data.qrCode;
+            } else {
+              // Hoặc dùng dịch vụ render QR nhanh
+              document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.checkoutUrl)}`;
+            }
+
+            document.getElementById('qrModal').classList.remove('hidden');
+          } else {
+            alert('Lỗi tạo link thanh toán');
+          }
+        } else {
+          alert(data.detail || 'Không thể tạo đơn donate');
+        }
+      } catch (err) {
+        alert('Lỗi kết nối tới máy chủ: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
+
+    // Tải danh sách donate gần đây
+    async function loadRecentDonations() {
+      try {
+        const res = await fetch('/api/recent-donations');
+        const data = await res.json();
+        const listEl = document.getElementById('recentList');
+        
+        if (data.donations && data.donations.length > 0) {
+          listEl.innerHTML = data.donations.map(d => `
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-700/60 flex flex-col gap-1">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-white text-xs flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-check text-emerald-400 text-[10px]"></i> ${escapeHtml(d.name)}
+                </span>
+                <span class="font-mono font-bold text-amber-400 text-xs">+${d.amount.toLocaleString()}đ</span>
+              </div>
+              <p class="text-xs text-slate-300 italic">"${escapeHtml(d.message || 'Ủng hộ bạn!')}"</p>
+            </div>
+          `).join('');
+        } else {
+          listEl.innerHTML = '<div class="text-xs text-slate-500 text-center py-6">Chưa có lượt ủng hộ nào. Hãy là người đầu tiên!</div>';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function testVoiceAlert() {
+      const name = document.getElementById('donorName').value || 'Người Dùng Test';
+      const amount = parseInt(document.getElementById('donorAmount').value) || 50000;
+      const message = document.getElementById('donorMessage').value || 'Lời nhắn thử nghiệm đọc giọng nói!';
+      
+      await fetch('/api/test-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, amount, message })
+      });
+      alert('Đã gửi thông báo test! Hãy mở trang /overlay hoặc chạy speaker_client.py trên máy để nghe đọc.');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+    }
+
+    loadRecentDonations();
+    setInterval(loadRecentDonations, 10000);
+  </script>
+</body>
+</html>
