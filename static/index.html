@@ -6,6 +6,7 @@
   <title>Ủng Hộ / Donate Tự Động - payOS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white">
 
@@ -139,8 +140,8 @@
       <p class="text-xs text-slate-400 mt-1 mb-4">Sử dụng ứng dụng Ngân hàng bất kỳ để quét mã VietQR</p>
 
       <!-- Khung QR -->
-      <div class="bg-white p-3 rounded-xl inline-block shadow-inner mb-4">
-        <img id="qrImage" src="" alt="VietQR PayOS" class="w-56 h-56 mx-auto object-contain" />
+      <div class="bg-white p-3 rounded-2xl inline-block shadow-inner mb-4">
+        <div id="qrcode" class="w-56 h-56 mx-auto flex items-center justify-center"></div>
       </div>
 
       <div class="space-y-1 mb-5 text-sm">
@@ -208,12 +209,34 @@
             document.getElementById('modalOrderCode').innerText = '#' + data.orderCode;
             document.getElementById('payosLink').href = data.checkoutUrl;
             
-            // Nếu có link qrCode hoặc sinh từ payOS
-            if (data.qrCode) {
-              document.getElementById('qrImage').src = data.qrCode;
-            } else {
-              // Hoặc dùng dịch vụ render QR nhanh
-              document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.checkoutUrl)}`;
+            // Render mã VietQR từ chuỗi thanh toán payOS
+            const qrString = data.qrCode || data.checkoutUrl;
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+
+            let rendered = false;
+            if (typeof QRCode !== 'undefined') {
+              try {
+                new QRCode(qrContainer, {
+                  text: qrString,
+                  width: 224,
+                  height: 224,
+                  colorDark: "#000000",
+                  colorLight: "#ffffff",
+                  correctLevel: QRCode.CorrectLevel.M
+                });
+                rendered = true;
+              } catch (e) {
+                console.error("Lỗi render QRCode.js:", e);
+              }
+            }
+
+            if (!rendered) {
+              const qrImg = document.createElement('img');
+              qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrString)}`;
+              qrImg.className = 'w-56 h-56 mx-auto object-contain';
+              qrImg.alt = 'VietQR PayOS';
+              qrContainer.appendChild(qrImg);
             }
 
             document.getElementById('qrModal').classList.remove('hidden');
