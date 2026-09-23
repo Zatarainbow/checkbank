@@ -61,6 +61,14 @@ def speak(text: str):
         print("[ERROR] Không thể phát âm thanh qua loa!")
 
 
+def show_desktop_notification(donor_name: str, amount: int, message: str):
+    """Hiện thông báo popup trên màn hình máy tính"""
+    title = f"🎉 DONATE MỚI: {donor_name} (+{amount:,} VND)"
+    body = f"💬 Lời nhắn: {message}"
+    if sys.platform.startswith("linux"):
+        os.system(f'notify-send -t 10000 -u critical "{title}" "{body}" > /dev/null 2>&1')
+
+
 def poll_loop():
     print("=" * 65)
     print("🎙️  PAYOS VOICE DONATION LISTENER")
@@ -96,6 +104,11 @@ def poll_loop():
 
                     print(f"\n🎉 [DONATE MỚI] {donor_name} vừa ủng hộ {amount:,} VND")
                     print(f"💬 Lời nhắn: {message}")
+                    
+                    # Hiện thông báo trên màn hình
+                    show_desktop_notification(donor_name, amount, message)
+                    
+                    # Đọc to qua loa
                     speak(speech_text)
 
         except requests.exceptions.RequestException:

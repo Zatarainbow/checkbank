@@ -3,76 +3,161 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alert Box & Voice Reader - OBS / Browser Overlay</title>
+  <title>Alert Box & Voice Reader - OBS / Overlay</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
-    @keyframes bounceIn {
-      0% { transform: scale(0.3); opacity: 0; }
-      50% { transform: scale(1.05); opacity: 1; }
-      70% { transform: scale(0.9); }
-      100% { transform: scale(1); opacity: 1; }
+    @keyframes alertIn {
+      0% { transform: scale(0.4) translateY(40px); opacity: 0; }
+      60% { transform: scale(1.05) translateY(-5px); opacity: 1; }
+      80% { transform: scale(0.98) translateY(2px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
     }
-    .animate-bounce-in {
-      animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    @keyframes alertOut {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0.6) translateY(-30px); opacity: 0; }
+    }
+    .animate-alert-in {
+      animation: alertIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    .animate-alert-out {
+      animation: alertOut 0.5s ease-in forwards;
+    }
+    .glow-box {
+      box-shadow: 0 0 40px rgba(244, 63, 94, 0.45), 0 0 80px rgba(251, 191, 36, 0.2);
     }
   </style>
 </head>
-<body class="bg-transparent min-h-screen flex items-center justify-center p-4 overflow-hidden">
+<body class="bg-transparent min-h-screen flex items-center justify-center p-4 overflow-hidden select-none">
 
-  <!-- Hộp thông báo Alert Box -->
-  <div id="alertBox" class="hidden max-w-lg w-full bg-slate-900/95 border-2 border-rose-500 rounded-3xl p-6 shadow-2xl backdrop-blur-md text-center text-white relative">
+  <!-- ==================== HỘP THÔNG BÁO ALERT BOX ==================== -->
+  <div id="alertBox" class="hidden max-w-lg w-full bg-slate-900/95 border-2 border-rose-500 rounded-3xl p-6 glow-box backdrop-blur-xl text-center text-white relative">
     
-    <!-- Huy hiệu icon quà tặng -->
-    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/40 text-2xl animate-pulse">
-      <i class="fa-solid fa-gift text-white"></i>
+    <!-- KHUNG ICON ẢNH ĐỘNG GIF NỔI BẬT -->
+    <div class="relative mx-auto mb-3 flex items-center justify-center">
+      <div class="p-1 rounded-2xl bg-gradient-to-tr from-rose-500/30 to-amber-500/30 backdrop-blur-sm border border-rose-500/40">
+        <img id="alertGif" 
+             src="https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif" 
+             alt="Donation GIF" 
+             class="w-36 h-36 object-contain rounded-xl drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
+      </div>
     </div>
 
-    <!-- Tên người donate & Số tiền -->
-    <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-rose-400" id="alertDonor">
+    <!-- TÊN NGƯỜI DONATE -->
+    <h2 class="text-2xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-rose-400 uppercase drop-shadow" id="alertDonor">
       Người ủng hộ
     </h2>
-    <div class="text-3xl font-extrabold text-amber-300 font-mono my-2" id="alertAmount">
+
+    <!-- SỐ TIỀN ỦNG HỘ -->
+    <div class="text-3xl font-black text-amber-300 font-mono my-2 drop-shadow-[0_2px_10px_rgba(251,191,36,0.5)]" id="alertAmount">
       +0 VND
     </div>
 
-    <!-- Lời nhắn -->
-    <div class="mt-3 p-4 bg-slate-800/80 rounded-2xl border border-slate-700 text-sm text-slate-200 font-medium italic" id="alertMessage">
-      "Lời nhắn ở đây"
+    <!-- LỜI NHẮN ĐI KÈM (ĐƯỢC ĐỌC TO LÊN MÀN HÌNH) -->
+    <div class="mt-3 p-4 bg-slate-800/90 rounded-2xl border border-slate-700/80 text-sm text-slate-100 font-medium italic relative shadow-inner">
+      <i class="fa-solid fa-quote-left text-rose-500/40 text-lg absolute top-2 left-3"></i>
+      <span id="alertMessage" class="relative z-10 px-4 inline-block">"Lời nhắn donate sẽ hiển thị ở đây!"</span>
+      <i class="fa-solid fa-quote-right text-rose-500/40 text-lg absolute bottom-2 right-3"></i>
     </div>
 
-    <!-- Thanh tiến trình thời gian hiển thị -->
-    <div class="w-full bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
-      <div id="alertProgress" class="bg-rose-500 h-full w-full transition-all duration-[7000ms] ease-linear"></div>
+    <!-- THANH TIẾN TRÌNH THỜI GIAN ĐỌC / HIỂN THỊ -->
+    <div class="w-full bg-slate-800 h-2 rounded-full mt-4 overflow-hidden border border-slate-700">
+      <div id="alertProgress" class="bg-gradient-to-r from-rose-500 to-amber-400 h-full w-full"></div>
     </div>
   </div>
 
-  <!-- Bảng điều khiển nhỏ góc dưới (cho người dùng kiểm tra trạng thái) -->
-  <div id="statusBadge" class="fixed bottom-3 right-3 bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-400 flex items-center gap-2 shadow-lg backdrop-blur">
-    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-    <span id="statusText">Đang lắng nghe donate payOS...</span>
-    <button onclick="testSpeak()" class="ml-2 text-rose-400 hover:text-rose-300 underline font-semibold">Test Loa</button>
+  <!-- ==================== BẢNG ĐIỀU KHIỂN GÓC DƯỚI (DỄ DÀNG TÙY CHỈNH GIF) ==================== -->
+  <div id="statusBadge" class="fixed bottom-3 right-3 bg-slate-900/90 border border-slate-700 rounded-2xl px-4 py-2 text-xs text-slate-400 flex items-center gap-3 shadow-2xl backdrop-blur">
+    <div class="flex items-center gap-1.5">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+      <span id="statusText">Lắng nghe payOS...</span>
+    </div>
+    
+    <div class="h-3 w-px bg-slate-700"></div>
+
+    <!-- Nút đổi GIF -->
+    <button onclick="toggleGifMenu()" class="text-slate-300 hover:text-white flex items-center gap-1 transition">
+      <i class="fa-solid fa-image text-amber-400"></i> Đổi GIF
+    </button>
+
+    <div class="h-3 w-px bg-slate-700"></div>
+
+    <!-- Nút Test -->
+    <button onclick="testSpeak()" class="text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 transition">
+      <i class="fa-solid fa-play"></i> Test Thử
+    </button>
+  </div>
+
+  <!-- MENU CHỌN GIF NHANH -->
+  <div id="gifMenu" class="fixed bottom-14 right-3 bg-slate-900/95 border border-slate-700 rounded-2xl p-4 shadow-2xl backdrop-blur max-w-xs w-full hidden z-50 text-xs">
+    <div class="flex justify-between items-center mb-3">
+      <h4 class="font-bold text-white">Chọn Icon GIF thông báo:</h4>
+      <button onclick="toggleGifMenu()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="space-y-2">
+      <button onclick="selectGif('https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif')" class="w-full text-left p-2 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center gap-2 text-slate-300 transition">
+        <span>💰</span> Mưa tiền vàng (Mặc định)
+      </button>
+      <button onclick="selectGif('https://media.giphy.com/media/MDJ9IbxxvDUQM/giphy.gif')" class="w-full text-left p-2 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center gap-2 text-slate-300 transition">
+        <span>🐱</span> Mèo vui nhộn nhảy múa
+      </button>
+      <button onclick="selectGif('https://media.giphy.com/media/LdOyjZ7io5M88/giphy.gif')" class="w-full text-left p-2 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center gap-2 text-slate-300 transition">
+        <span>🦆</span> Vịt bơi trong núi tiền
+      </button>
+    </div>
+    <div class="mt-3 pt-2 border-t border-slate-700">
+      <label class="block text-[11px] text-slate-400 mb-1">Hoặc dán URL GIF của bạn:</label>
+      <input type="text" id="customGifInput" placeholder="https://.../my_gif.gif" 
+             class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-rose-500 mb-2" />
+      <button onclick="applyCustomGif()" class="w-full py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-semibold transition">
+        Lưu GIF tùy chọn
+      </button>
+    </div>
   </div>
 
   <script>
     let alertQueue = [];
     let isShowingAlert = false;
     let selectedVoice = null;
+    let currentGifUrl = localStorage.getItem('payos_alert_gif') || 'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif';
+
+    // Cài đặt GIF ban đầu
+    document.getElementById('alertGif').src = currentGifUrl;
+
+    function toggleGifMenu() {
+      document.getElementById('gifMenu').classList.toggle('hidden');
+    }
+
+    function selectGif(url) {
+      currentGifUrl = url;
+      localStorage.setItem('payos_alert_gif', url);
+      document.getElementById('alertGif').src = url;
+      toggleGifMenu();
+      testSpeak();
+    }
+
+    function applyCustomGif() {
+      const url = document.getElementById('customGifInput').value.trim();
+      if (url) {
+        selectGif(url);
+      }
+    }
 
     // Tự động tìm giọng đọc tiếng Việt của trình duyệt
     function initSpeechVoice() {
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.onvoiceschanged = () => {
+        const setVoice = () => {
           const voices = window.speechSynthesis.getVoices();
-          // Ưu tiên giọng tiếng Việt (vi-VN)
           selectedVoice = voices.find(v => v.lang.startsWith('vi') || v.name.toLowerCase().includes('vietnam')) || null;
         };
+        setVoice();
+        window.speechSynthesis.onvoiceschanged = setVoice;
       }
     }
     initSpeechVoice();
 
-    // Phát âm thanh ting-ting ngắn trước khi đọc
+    // Phát âm thanh ting-ting trước khi đọc
     function playBeep() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -80,35 +165,18 @@
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
         gain.gain.setValueAtTime(0.3, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.5);
       } catch (e) {
-        console.warn('AudioContext chưa kích hoạt:', e);
+        console.warn('AudioContext:', e);
       }
     }
 
-    // Đọc văn bản bằng giọng nói
-    function speakText(text) {
-      if (!('speechSynthesis' in window)) {
-        console.warn('Trình duyệt không hỗ trợ Web Speech API');
-        return;
-      }
-      window.speechSynthesis.cancel(); // Dừng câu trước nếu có
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'vi-VN';
-      utterance.rate = 1.0; // Tốc độ đọc
-      utterance.pitch = 1.0;
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-      }
-      window.speechSynthesis.speak(utterance);
-    }
-
-    // Hiển thị Alert trên màn hình
+    // Hiển thị Alert trên màn hình và đọc lời nhắn
     function showAlert(alertData) {
       isShowingAlert = true;
       const box = document.getElementById('alertBox');
@@ -121,34 +189,69 @@
       amountEl.innerText = '+' + alertData.amount.toLocaleString() + ' VND';
       msgEl.innerText = `"${alertData.message || 'Ủng hộ bạn!'}"`;
 
-      box.classList.remove('hidden');
-      box.classList.add('animate-bounce-in');
+      // Reset hiệu ứng và hiển thị
+      box.classList.remove('hidden', 'animate-alert-out');
+      box.classList.add('animate-alert-in');
+      progressEl.style.transition = 'none';
       progressEl.style.width = '100%';
 
-      // Bắn pháo hoa confetti
+      // Bắn pháo hoa Confetti
       if (typeof confetti === 'function') {
-        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+        confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
       }
 
-      // Phát tiếng chuông & Đọc to
+      // Phát âm thanh ting-ting
       playBeep();
-      setTimeout(() => {
-        const speechContent = alertData.speechText || `Cảm ơn ${alertData.name} đã ủng hộ ${alertData.amount.toLocaleString()} đồng. Lời nhắn: ${alertData.message}`;
-        speakText(speechContent);
-      }, 300);
 
-      // Bắt đầu chạy thanh thời gian
+      // Chuẩn bị nội dung giọng nói
+      const speechContent = alertData.speechText || `Cảm ơn ${alertData.name} đã ủng hộ ${alertData.amount.toLocaleString()} đồng. Lời nhắn: ${alertData.message}`;
+      
+      // Thời lượng hiển thị tối thiểu tính theo độ dài văn bản
+      const estimatedDurationMs = Math.max(7500, speechContent.length * 110 + 2000);
+
+      // Chạy thanh tiến trình mượt mà
       setTimeout(() => {
+        progressEl.style.transition = `width ${estimatedDurationMs}ms linear`;
         progressEl.style.width = '0%';
       }, 50);
 
-      // Ẩn sau 7 giây và xử lý alert tiếp theo
-      setTimeout(() => {
-        box.classList.add('hidden');
-        box.classList.remove('animate-bounce-in');
-        isShowingAlert = false;
-        processQueue();
-      }, 7000);
+      // Bắt đầu đọc giọng nói tiếng Việt
+      let speechFinished = false;
+      function onComplete() {
+        if (speechFinished) return;
+        speechFinished = true;
+        
+        // Hiệu ứng ẩn dần hộp thông báo
+        setTimeout(() => {
+          box.classList.remove('animate-alert-in');
+          box.classList.add('animate-alert-out');
+          setTimeout(() => {
+            box.classList.add('hidden');
+            box.classList.remove('animate-alert-out');
+            isShowingAlert = false;
+            processQueue();
+          }, 500);
+        }, 1500);
+      }
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(speechContent);
+        utterance.lang = 'vi-VN';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        if (selectedVoice) utterance.voice = selectedVoice;
+        
+        utterance.onend = onComplete;
+        utterance.onerror = onComplete;
+        
+        setTimeout(() => {
+          window.speechSynthesis.speak(utterance);
+        }, 350);
+      }
+
+      // Đảm bảo ẩn hộp nếu giọng nói bị tắt hoặc kết thúc
+      setTimeout(onComplete, estimatedDurationMs + 1000);
     }
 
     function processQueue() {
@@ -157,7 +260,7 @@
       showAlert(nextAlert);
     }
 
-    // Polling lấy các donate mới từ backend
+    // Polling lấy thông báo donate mới từ backend
     async function pollAlerts() {
       try {
         const res = await fetch('/api/alerts/poll?mark_read=true');
@@ -167,17 +270,17 @@
           processQueue();
         }
       } catch (err) {
-        console.error('Lỗi poll alerts:', err);
+        console.error('Lỗi poll:', err);
       }
     }
 
-    // Nút thử nghiệm loa
+    // Nút thử nghiệm nhanh trên giao diện
     function testSpeak() {
       alertQueue.push({
-        name: 'Bạn Thử Nghiệm',
+        name: 'Hoàng Fan Cứng',
         amount: 50000,
-        message: 'Xin chào! Hệ thống đọc giọng nói payOS đang hoạt động rất tốt!',
-        speechText: 'Cảm ơn Bạn Thử Nghiệm đã ủng hộ 50.000 đồng. Lời nhắn: Xin chào! Hệ thống đọc giọng nói payOS đang hoạt động rất tốt!'
+        message: 'Chúc bạn buổi tối vui vẻ, kênh ngày càng phát triển nhé!',
+        speechText: 'Cảm ơn Hoàng Fan Cứng đã ủng hộ 50.000 đồng. Lời nhắn: Chúc bạn buổi tối vui vẻ, kênh ngày càng phát triển nhé!'
       });
       processQueue();
     }
