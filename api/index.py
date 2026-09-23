@@ -26,7 +26,7 @@ app.add_middleware(
 # Cấu hình PayOS Credentials (ưu tiên đọc từ biến môi trường, có fallback)
 PAYOS_CLIENT_ID = os.environ.get("PAYOS_CLIENT_ID", "01c53879-4ad0-46c8-bb0f-16a2470490c8")
 PAYOS_API_KEY = os.environ.get("PAYOS_API_KEY", "94996c24-3b50-4003-a663-6a185101916e")
-PAYOS_CHECKSUM_KEY = os.environ.get("PAYOS_CHECKSUM_KEY", "").strip()
+PAYOS_CHECKSUM_KEY = os.environ.get("PAYOS_CHECKSUM_KEY", "2aa9e5e522ba6dd1e559136cf53d976eb42bcfcd0355b86f416c0e303b4a698e").strip()
 
 # Thử import thư viện payos chính thức nếu có
 try:
